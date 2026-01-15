@@ -1,1 +1,230 @@
-winter intern project
+IMU-Based Gesture Recognition Using Deep Representation Learning
+Overview
+
+This project implements an IMU-based gesture recognition system using deep learning, with a strong focus on representation learning through different loss functions.
+Rather than evaluating performance using only classification accuracy, the project systematically studies how different loss functions influence the learned embedding space for IMU signals.
+
+The system uses raw inertial sensor data (accelerometer + gyroscope) and a fixed CNN-based architecture, while experimenting with multiple loss functions under identical training conditions. This controlled setup allows a fair and meaningful comparison of learning objectives.
+
+Motivation
+
+IMU gesture recognition is challenging due to:
+
+High sensor noise and drift
+
+Large intra-class variation across users
+
+Overlapping motion patterns between gestures
+
+Ambiguity between visually similar characters (e.g., O, o, 0)
+
+While standard classification losses optimize decision boundaries, they do not explicitly enforce structured feature representations. This project explores whether embedding-based loss functions can produce better-separated and more semantically meaningful embeddings for IMU signals.
+
+Dataset Description
+Sensor Modality
+
+6-axis IMU data
+
+3-axis Accelerometer (X, Y, Z)
+
+3-axis Gyroscope (X, Y, Z)
+
+Sample Format
+
+Each gesture sample is represented as:
+
+(Time Steps × 6)
+
+Class Configurations
+
+Two class setups are used:
+
+Configuration	Description
+62 Classes	Full alphanumeric set
+47 Classes	Merged classes where visually similar characters are grouped (e.g., O/o/0)
+Dataset Structure
+Data/
+ └── 62_classes/
+     ├── UserIndependent/
+     │   ├── Train/
+     │   │   ├── X_train_1.npy
+     │   │   ├── y_train_1.npy
+     │   │   └── ...
+     │   └── Test/
+     │       ├── X_test_1.npy
+     │       ├── y_test_1.npy
+     │       └── ...
+
+
+X_*.npy: IMU signals (N × T × 6)
+
+y_*.npy: One-hot encoded labels
+
+Multiple predefined user-independent splits
+
+Each split is treated as an independent experiment
+
+Preprocessing Pipeline
+
+The same preprocessing steps are applied across all experiments:
+
+Channel-wise normalization
+
+Each IMU channel is normalized independently per sample
+
+No handcrafted features
+
+Features are learned directly from raw IMU time-series
+
+Identical preprocessing for all loss functions
+
+This ensures that differences in performance arise only from the loss function, not from data handling.
+
+Model Architecture
+
+A fixed CNN-based encoder is used for all experiments.
+
+Encoder
+
+1D Convolution layers for temporal feature extraction
+
+ReLU activations
+
+Max pooling for temporal downsampling
+
+Global average pooling
+
+Fully connected layer producing a fixed-dimensional embedding
+
+Classifier Head
+
+A linear layer applied on top of embeddings
+
+Used only during supervised training
+
+Important:
+The architecture remains unchanged for all experiments to maintain fairness.
+
+Loss Functions Evaluated
+
+The central contribution of this work is a systematic comparison of multiple loss functions for IMU gesture recognition.
+
+1. Cross-Entropy Loss (Baseline)
+
+Standard classification objective
+
+Optimizes class prediction accuracy
+
+Does not explicitly structure the embedding space
+
+2. Supervised Contrastive Loss (SCL)
+
+Encourages global clustering of same-class samples
+
+Maximizes separation between different classes
+
+Produces highly structured embeddings
+
+Requires sufficiently diverse batches
+
+3. Triplet Loss
+
+Enforces relative distance constraints using anchor-positive-negative samples
+
+Sensitive to sample mining strategy
+
+Shows variability across splits
+
+4. Margin-Based Embedding Loss
+
+Enforces an explicit margin between classes
+
+Improves boundary separation
+
+Requires careful optimization for stable convergence
+
+All loss functions are trained using the same model, optimizer, batch size, learning rate, and number of epochs.
+
+Training Strategy
+
+Framework: PyTorch
+
+Optimizer: Adam
+
+Fixed learning rate and batch size
+
+Same number of epochs across losses
+
+User-independent evaluation
+
+No architectural changes between experiments
+
+This controlled setup guarantees reproducibility and unbiased comparison.
+
+Embedding Visualization
+
+To analyze representation quality, embeddings learned by the encoder are visualized using UMAP.
+
+Visualization Method
+
+Embeddings extracted from trained encoder
+
+Dimensionality reduced to 2D using UMAP
+
+Cosine distance used for similarity
+
+Points colored by gesture class
+
+Cluster centers annotated with gesture characters
+
+Observations
+
+Cross-entropy loss shows weaker cluster separation
+
+Triplet loss produces inconsistent clusters due to mining sensitivity
+
+Margin-based loss improves separation but converges slowly
+
+Supervised contrastive loss produces the most compact and well-separated clusters
+
+For merged-class datasets (47 classes), visually similar characters (e.g., O/o/0) naturally overlap, reflecting real-world ambiguity.
+
+Saved Outputs
+
+The project saves:
+
+Learned embeddings (.npy)
+
+Corresponding labels (.npy)
+
+UMAP plots for qualitative analysis
+
+These artifacts enable further analysis without retraining.
+
+Key Contributions
+
+IMU-based gesture recognition using raw sensor data
+
+Fair comparison of multiple loss functions
+
+Controlled experimental design
+
+Visualization-driven analysis of embedding quality
+
+Support for merged gesture classes reflecting perceptual similarity
+
+Conclusion
+
+This project demonstrates that loss function choice significantly impacts representation quality in IMU gesture recognition. While standard cross-entropy provides a strong baseline, embedding-based losses—particularly supervised contrastive loss—produce more structured and semantically meaningful representations.
+
+The results highlight the importance of moving beyond accuracy metrics and analyzing how models organize information in feature space, especially for noisy time-series data such as IMU signals.
+
+Future Work
+
+Cross-session and cross-device generalization
+
+Lightweight models for real-time deployment
+
+Self-supervised or pretraining-based approaches
+
+Quantitative embedding metrics (silhouette score, Davies–Bouldin index)
